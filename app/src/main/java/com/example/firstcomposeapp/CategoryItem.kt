@@ -1,5 +1,8 @@
 package com.example.firstcomposeapp
 
+import androidx.compose.runtime.Stable
+
+@Stable
 class CategoryItem {
     var id = 0
     var name = ""

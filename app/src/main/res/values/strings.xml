@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">FirstComposeApp</string>
+    <string name="title_activity_calculator">CalculatorActivity</string>
 </resources>

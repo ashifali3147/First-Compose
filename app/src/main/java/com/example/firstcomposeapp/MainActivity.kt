@@ -1,6 +1,7 @@
 package com.example.firstcomposeapp
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -142,6 +143,12 @@ class MainActivity : ComponentActivity() {
                     shape = CutCornerShape(10.dp),
                 ) {
                     Text(text = "Pay")
+                }
+
+                Button(onClick = {
+                    startActivity(Intent(this@MainActivity, CalculatorActivity::class.java))
+                }) {
+                    Text("Calculator")
                 }
                 val painter = painterResource(id = R.drawable.ic_launcher_background)
 
