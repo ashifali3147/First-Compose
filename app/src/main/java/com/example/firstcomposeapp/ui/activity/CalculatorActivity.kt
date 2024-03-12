@@ -1,4 +1,4 @@
-package com.example.firstcomposeapp
+package com.example.firstcomposeapp.ui.activity
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -119,7 +119,7 @@ fun CalRow(modifier: Modifier, inputText: String) {
         }
 
         Row() {
-            RoundedButton(modifier, "0.0", 1, inputText)
+            RoundedButton(modifier, "00", 1, inputText)
             RoundedButton(modifier, "0", 1, inputText)
             RoundedButton(modifier, ".", 1, inputText)
             RoundedButton(modifier, "=", 2, inputText)
@@ -156,7 +156,7 @@ fun RoundedButton(modifier: Modifier, text: String, type: Int, inputText: String
 
 }
 
-@Preview(showBackground = true)
+@Preview(showSystemUi = true, showBackground = true)
 @Composable
 fun GreetingPreview2() {
     FirstComposeAppTheme {

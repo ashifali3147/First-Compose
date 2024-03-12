@@ -1,4 +1,4 @@
-package com.example.firstcomposeapp
+package com.example.firstcomposeapp.model
 
 class BaseModel<T> {
     var error = true

@@ -1,5 +1,8 @@
-package com.example.firstcomposeapp
+package com.example.firstcomposeapp.network
 
+import com.example.firstcomposeapp.model.BaseModel
+import com.example.firstcomposeapp.model.CategoryItem
+import com.example.firstcomposeapp.model.MenuResponseModel
 import retrofit2.Response
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded

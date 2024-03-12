@@ -1,4 +1,4 @@
-package com.example.firstcomposeapp
+package com.example.firstcomposeapp.model
 
 import androidx.compose.runtime.Stable
 

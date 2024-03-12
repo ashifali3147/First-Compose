@@ -1,4 +1,4 @@
-package com.example.firstcomposeapp
+package com.example.firstcomposeapp.network
 
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient

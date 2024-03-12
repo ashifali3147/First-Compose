@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">FirstComposeApp</string>
     <string name="title_activity_calculator">CalculatorActivity</string>
+    <string name="title_activity_main_container_navigation">MainContainerNavigationActivity</string>
 </resources>
