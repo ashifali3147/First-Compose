@@ -2,4 +2,12 @@
     <string name="app_name">FirstComposeApp</string>
     <string name="title_activity_calculator">CalculatorActivity</string>
     <string name="title_activity_main_container_navigation">MainContainerNavigationActivity</string>
+    <string name="title_activity_slot_machine">SlotMachineActivity</string>
+
+    <string name="btn_play">PLAY</string>
+    <string name="btn_stop">STOP</string>
+    <string name="txt_cash">CASH: $</string>
+    <string name="txt_bet">BET: $</string>
+    <string name="error_cash">You have not enough cash</string>
+    <string name="exit">Press again to exit</string>
 </resources>
