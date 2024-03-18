@@ -1,13 +1,19 @@
 package com.example.firstcomposeapp.ui.activity
 
+import android.content.SharedPreferences
 import android.graphics.BitmapFactory
 import android.graphics.Shader
 import android.graphics.Typeface
+import android.media.AudioManager
+import android.media.MediaPlayer
+import android.media.SoundPool
 import android.os.Bundle
-import android.view.WindowManager
+import android.preference.PreferenceManager
+import android.util.Log
+import android.view.View
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateContentSize
@@ -31,7 +37,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -39,6 +44,9 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,39 +71,92 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.view.WindowCompat
 import coil.compose.AsyncImage
 import com.example.firstcomposeapp.R
 import com.example.firstcomposeapp.ui.activity.ui.theme.FirstComposeAppTheme
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.io.IOException
 import kotlin.random.Random
 
 class SlotMachineActivity : ComponentActivity() {
+    override fun onStart() {
+        super.onStart()
+        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
+//        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
-            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
-        )
+//        WindowCompat.setDecorFitsSystemWindows(window, false)
+//        window.setFlags(
+//            WindowManager.LayoutParams.FLAG_FULLSCREEN,
+//            WindowManager.LayoutParams.FLAG_FULLSCREEN
+//        )
         setContent {
             FirstComposeAppTheme {
                 MainUI()
             }
         }
+// preferences
+        sp = PreferenceManager.getDefaultSharedPreferences(this)
+        // bg sound
+        mediaPlayer = MediaPlayer()
+        try {
+            val descriptor = assets.openFd("sndBg.mp3")
+            mediaPlayer.setDataSource(
+                descriptor.fileDescriptor, descriptor.startOffset, descriptor.length
+            )
+            descriptor.close()
+            mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC)
+            mediaPlayer.isLooping = true
+            mediaPlayer.setVolume(0f, 0f)
+            mediaPlayer.prepare()
+            mediaPlayer.start()
+        } catch (e: Exception) {
+        }
+
+        sndpool = SoundPool(3, AudioManager.STREAM_MUSIC, 0)
+        try {
+            sndStart = sndpool!!.load(assets.openFd("sndStart.mp3"), 1)
+            sndStop = sndpool!!.load(assets.openFd("sndStop.mp3"), 1)
+            sndWin = sndpool!!.load(assets.openFd("sndWin.mp3"), 1)
+        } catch (e: IOException) {
+        }
+    }
+
+    override fun onPause() {
+        isForeground = false
+        mediaPlayer.setVolume(0f, 0f)
+        super.onPause()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        isForeground = true
+        if (!sp!!.getBoolean("mute", false) && isForeground) mediaPlayer.setVolume(0.2f, 0.2f)
     }
 
 }
 
+private lateinit var mediaPlayer: MediaPlayer
+var sndpool: SoundPool? = null
+var sndStart = 0
+var sndWin = 0
+var sndStop = 0
+var isForeground = false
+var sp: SharedPreferences? = null
+
+
+@Stable
 @Composable
 fun MainUI() {
     val context = LocalContext.current
@@ -106,6 +167,7 @@ fun MainUI() {
     var bet by remember {
         mutableStateOf(5)
     }
+    var win = 10 //win
     val font = Typeface.createFromAsset(context.assets, "CooperBlack.otf")
     var isScaled by remember { mutableStateOf(false) }
 
@@ -129,7 +191,7 @@ fun MainUI() {
 
     //=======================
     var count by remember {
-        mutableStateOf(3)
+        mutableStateOf(mutableListOf(3, 4, 2, 7, 3))
     }
 
     val slowSpeed = 300L
@@ -193,6 +255,76 @@ fun MainUI() {
         }
     }
     //=====================
+
+    var isSpinEnable1 by remember {
+        mutableStateOf(false)
+    }
+    var isSpinEnable2 by remember {
+        mutableStateOf(false)
+    }
+    var isSpinEnable3 by remember {
+        mutableStateOf(false)
+    }
+    var isSpinEnable4 by remember {
+        mutableStateOf(false)
+    }
+    var isSpinEnable5 by remember {
+        mutableStateOf(false)
+    }
+
+    LaunchedEffect(Unit) {
+        isSpinEnable1 = false
+    }
+    LaunchedEffect(Unit) {
+        isSpinEnable2 = false
+    }
+    LaunchedEffect(Unit) {
+        isSpinEnable3 = false
+    }
+    LaunchedEffect(Unit) {
+        isSpinEnable4 = false
+    }
+    LaunchedEffect(Unit) {
+        isSpinEnable5 = false
+    }
+
+    LaunchedEffect(isSpinEnable) {
+        Log.e("sdvsdvdsv", "Spin: $isSpinEnable")
+
+//        val job1 = launch {
+            isSpinEnable1 = isSpinEnable
+            Log.e("sdsdvfs", "1 -> $isSpinEnable1")
+//        }
+//
+//                                val job2 = launch {
+        delay(100)
+        isSpinEnable2 = isSpinEnable
+        Log.e("sdsdvfs", "2 -> $isSpinEnable2")
+//                                }
+//                                val job3 = launch {
+        delay(200)
+        isSpinEnable3 = isSpinEnable
+        Log.e("sdsdvfs", "3 -> $isSpinEnable3")
+//                                }
+//                                val job4 = launch {
+        delay(300)
+        isSpinEnable4 = isSpinEnable
+        Log.e("sdsdvfs", "4 -> $isSpinEnable4")
+//                                }
+//                                val job5 = launch {
+        delay(400)
+        isSpinEnable5 = isSpinEnable
+        Log.e("sdsdvfs", "5 -> $isSpinEnable5")
+//                                }
+//                                job1.join()
+//                                job2.join()
+//                                job3.join()
+//                                job4.join()
+//                                job5.join()
+
+    }
+
+    //============================
 
     Box(
         modifier = Modifier
@@ -276,24 +408,39 @@ fun MainUI() {
                             ) {
                                 VintageEffectContent {
                                     SlotAnimation(
-                                        count = count,
+                                        count = count[slotSection],
                                         spinnerItems[slotSection],
-                                        scaleSlotSizeList[slotSection].value, isSpinEnable
+                                        scaleSlotSizeList[slotSection].value,
+                                        isSpinEnable
                                     )
                                 }
                             }
                         }
                     }
                 }
-
                 Button(
                     onClick = {
-                        isSpinEnable = !isSpinEnable.also { spinSpeed = slowSpeed }
+                        if (cash >= bet) {
+                            isSpinEnable = !isSpinEnable.also { spinSpeed = slowSpeed }
+                        } else {
+                            isSpinEnable = false
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.error_cash),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return@Button
+                        }
                         if (!isSpinEnable) {
                             spinnerItems.clear()
                             spinnerItems.addAll(generateRandomNumbers())
-                            getResult(scaleSlotList, spinnerItems)
+                            var _cash = mutableStateOf(cash)
+                            getResult(scaleSlotList, spinnerItems, _cash, win)
+                            cash = _cash.value
                             spinSpeed = slowSpeed
+                            if (isForeground) {
+                                sndpool!!.play(sndStop, 0.5f, 0.5f, 0, 0, 1f)
+                            }
                             GlobalScope.launch {
                                 delay(3000)
                                 scaleSlotList.forEachIndexed { index, value ->
@@ -301,20 +448,94 @@ fun MainUI() {
                                 }
                             }
                         } else {
+                            cash -= bet
+                            if (isForeground) {
+                                sndpool!!.play(sndStart, 0.5f, 0.5f, 0, 0, 1f)
+                            }
                             buttonVisibility = false
                         }
                         GlobalScope.launch {
-                            while (isSpinEnable) {
-                                delay(spinSpeed)
-                                spinSpeed = if (spinSpeed == slowSpeed) fastSpeed else spinSpeed
-                                if (count == 6) {
-                                    count = 0
-                                } else {
-                                    count++
+                            val spin1 = launch {
+                                val index = 0
+                                while (isSpinEnable) {
+                                    delay(spinSpeed + (index * 10))
+                                    spinSpeed = if (spinSpeed == slowSpeed) fastSpeed else spinSpeed
+                                    if (count[index] == 6) {
+                                        count[index] = 0
+                                    } else {
+                                        count[index]++
+                                    }
                                 }
                             }
-
+                            val spin2 = launch {
+                                val index = 1
+                                while (isSpinEnable) {
+                                    delay(spinSpeed + (index * 10))
+                                    spinSpeed = if (spinSpeed == slowSpeed) fastSpeed else spinSpeed
+                                    if (count[index] == 6) {
+                                        count[index] = 0
+                                    } else {
+                                        count[index]++
+                                    }
+                                }
+                            }
+                            val spin3 = launch {
+                                val index = 2
+                                while (isSpinEnable) {
+                                    delay(spinSpeed + (index * 10))
+                                    spinSpeed = if (spinSpeed == slowSpeed) fastSpeed else spinSpeed
+                                    if (count[index] == 6) {
+                                        count[index] = 0
+                                    } else {
+                                        count[index]++
+                                    }
+                                }
+                            }
+                            val spin4 = launch {
+                                val index = 3
+                                while (isSpinEnable) {
+                                    delay(spinSpeed + (index * 10))
+                                    spinSpeed = if (spinSpeed == slowSpeed) fastSpeed else spinSpeed
+                                    if (count[index] == 6) {
+                                        count[index] = 0
+                                    } else {
+                                        count[index]++
+                                    }
+                                }
+                            }
+                            val spin5 = launch {
+                                val index = 4
+                                while (isSpinEnable) {
+                                    delay(spinSpeed + (index * 10))
+                                    spinSpeed = if (spinSpeed == slowSpeed) fastSpeed else spinSpeed
+                                    if (count[index] == 6) {
+                                        count[index] = 0
+                                    } else {
+                                        count[index]++
+                                    }
+                                }
+                            }
+//                            sequenceOf(spin1, spin2, spin3, spin4, spin5)
+                            spin1.join()
+                            spin2.join()
+                            spin3.join()
+                            spin4.join()
+                            spin5.join()
+                            spin1.join()
                         }
+//                        GlobalScope.launch {
+//                            withContext(Dispatchers.Default) {
+//                                while (isSpinEnable) {
+//                                    delay(spinSpeed + (0 * 10))
+//                                    spinSpeed = if (spinSpeed == slowSpeed) fastSpeed else spinSpeed
+//                                    if (count[0] == 6) {
+//                                        count[0] = 0
+//                                    } else {
+//                                        count[0]++
+//                                    }
+//                                }
+//                            }
+//                        }
                     },
                     enabled = buttonVisibility,
                     modifier = Modifier
@@ -349,6 +570,10 @@ fun MainUI() {
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // custom font
+                val fontFamily = FontFamily(
+                    Font(R.font.copper_black)
+                )
                 Column(
                     modifier = Modifier
                         .weight(1f)
@@ -362,9 +587,10 @@ fun MainUI() {
                             .fillMaxWidth()
                             .padding(bottom = 10.dp),
                         color = Color.White,
-                        fontSize = 20.sp,
+                        fontSize = 30.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
+                        fontFamily = fontFamily,
                         style = TextStyle(
                             shadow = Shadow(
                                 color = Color.Black, offset = Offset(1f, 2f), blurRadius = 1f
@@ -375,9 +601,10 @@ fun MainUI() {
                         text = stringResource(id = R.string.txt_bet) + bet,
                         modifier = Modifier.fillMaxWidth(),
                         color = Color.Yellow,
-                        fontSize = 20.sp,
+                        fontSize = 25.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
+                        fontFamily = fontFamily,
                         style = TextStyle(
                             shadow = Shadow(
                                 color = Color.Black, offset = Offset(1f, 2f), blurRadius = 1f
@@ -391,14 +618,21 @@ fun MainUI() {
 }
 
 fun getResult(
-    scaleSlotList: MutableList<Boolean>, spinnerItems: MutableList<Int>
+    scaleSlotList: MutableList<Boolean>,
+    spinnerItems: MutableList<Int>,
+    cash: MutableState<Int>,
+    win: Int
 ) {
+    var isWin = false
     for (i in 0 until spinnerItems.size - 1) {
         if (spinnerItems[i] == spinnerItems[i + 1]) {
             scaleSlotList[i] = true
             scaleSlotList[i + 1] = true
+            cash.value += win
+            isWin = true
         }
     }
+    if (isForeground && isWin) sndpool!!.play(sndWin, 0.7f, 0.7f, 0, 0, 1f)
 }
 
 @Composable
@@ -409,12 +643,19 @@ fun getAssetResource(fileName: String): ImageBitmap {
     return bitmapBackgroundImage.asImageBitmap()
 }
 
+@Stable
 @Composable
 fun SlotAnimation(count: Int, slotItem: Int, scale: Float, isSpinEnable: Boolean) {
 //    var items = count
     var items = if (isSpinEnable) count else slotItem
+    var oldCount by remember {
+        mutableStateOf(items)
+    }
+    SideEffect {
+        oldCount = items
+    }
     AnimatedContent(
-        targetState = items, transitionSpec = {
+        targetState = count, transitionSpec = {
             // Compare the incoming number with the previous number.
             (slideInVertically { height -> height } + fadeIn()).togetherWith(slideOutVertically { height -> -height } + fadeOut())
                 .using(
